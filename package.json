@@ -1,0 +1,20 @@
+{
+  "name": "chat-app",
+  "version": "0.1.0",
+  "description": "Demo Group Chat Application for SUTD IAP 2021 Introduction to Real Time Web Applications",
+  "main": "index.js",
+  "repository": "https://github.com/realtime-apps-iap/chat-app",
+  "author": "lowen",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "axios": "^0.21.1",
+    "express": "^4.17.1",
+    "moment": "^2.29.1",
+    "niceware": "^2.0.1",
+    "pg": "^8.5.1",
+    "sequelize": "^6.3.5",
+    "sqlite3": "^5.0.1",
+    "ws": "^7.4.2"
+  }
+}

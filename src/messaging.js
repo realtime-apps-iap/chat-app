@@ -17,37 +17,60 @@ const bind = function (wss) {
         store.startUserSession(user);
         users[username] = user;
 
-        const welcomeMessage =
-            new classes.AdminMessage("WELCOME", timestamp, user, null, null);
-        ws.send(welcomeMessage.json);
+        ws.send(JSON.stringify({
+            type: "WELCOME",
+            time: timestamp,
+            receiver: user.visible,
+        }));
 
-        const newUserUpdateMessage =
-            new classes.AdminMessage("UPDATE_STATE", timestamp, null,
-                { users: Object.values(users).map(user => user.visible) }, null);
-        broadcast(null, newUserUpdateMessage.json);
+        broadcast(null, JSON.stringify({
+            type: "UPDATE_STATE",
+            time: timestamp,
+            state: { users: Object.values(users).map(user => user.visible) },
+        }));
 
-        const newUserAdminMessage =
-            new classes.AdminMessage("ADMIN_MESSAGE", timestamp, null, null, `${username} has joined the chat!`);
-        broadcast(null, newUserAdminMessage.json);
+        broadcast(null, JSON.stringify({
+            type: "ADMIN_MESSAGE",
+            time: timestamp,
+            text: `${username} has joined the chat!`,
+        }))
 
         ws.on('message', async function (payload) {
             const timestamp = moment().unix();
-            const text = JSON.parse(payload).text;
 
             try {
+                const text = JSON.parse(payload).text;
                 const containsProfanity = await utils.containsProfanity(text);
 
                 if (containsProfanity) {
-                    await store.addMessageRecord(new classes.UserMessage(user, false, timestamp, text));
-                    const profanityErrorMessage = new classes.AdminMessage("ERROR", timestamp, null, null,
-                        `The following message contained profanity and was not sent:\n${text}`);
-                    ws.send(profanityErrorMessage.json);
+                    await store.addMessageRecord({
+                        sender: user.visible,
+                        time: timestamp,
+                        visible: false,
+                        text: text
+                    });
+
+                    ws.send(JSON.stringify({
+                        type: "ERROR",
+                        time: timestamp,
+                        text: `The following message contained profanity and was not sent:\n${text}`,
+                    }));
                     return;
                 }
 
-                await store.addMessageRecord(new classes.UserMessage(user, true, timestamp, text));
-                const userMessage = new classes.UserMessage(user, true, timestamp, text);
-                broadcast(user, userMessage.json);
+                await store.addMessageRecord({
+                    sender: user.visible,
+                    time: timestamp,
+                    visible: true,
+                    text: text
+                });
+
+                broadcast(user, JSON.stringify({
+                    type: "USER_MESSAGE",
+                    time: timestamp,
+                    sender: user.visible,
+                    text: text,
+                }))
             }
             catch (e) {
                 console.log(e.message);
@@ -67,15 +90,17 @@ const bind = function (wss) {
         store.endUserSession(user);
         delete users[user.username];
 
-        const disconnectionStateUpdateMessage =
-            new classes.AdminMessage("UPDATE_STATE", timestamp, null,
-                { users: Object.values(users).map(user => user.visible) }, null);
-        broadcast(null, disconnectionStateUpdateMessage.json);
+        broadcast(null, JSON.stringify({
+            type: "UPDATE_STATE",
+            time: timestamp,
+            state: { users: Object.values(users).map(user => user.visible) },
+        }))
 
-        const disconnectionAdminMessage =
-            new classes.AdminMessage("ADMIN_MESSAGE", timestamp, null, null, `${user.username} has left the chat.`);
-        broadcast(null, disconnectionAdminMessage.json);
-
+        broadcast(null, JSON.stringify({
+            type: "ADMIN_MESSAGE",
+            time: timestamp,
+            text: `${user.username} has left the chat.`,
+        }))
     });
 
 

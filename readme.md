@@ -45,5 +45,6 @@ $ heroku container:release web
 
 
 [IAP notes on deployment to Heroku](https://realtime-apps-iap.github.io/docs/introduction/deployment-to-heroku)
+
 [Article on deploying docker images to Heroku](https://devcenter.heroku.com/articles/container-registry-and-runtime)
 
